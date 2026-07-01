@@ -1,0 +1,54 @@
+configfile: "config.yaml"
+
+# Stage 1: Generate random numbers in parallel
+rule generate_numbers:
+    output:
+        "data/generated/numbers_{file_id}.txt"
+    params:
+        num_numbers=config.get("numbers_per_file", 10)
+    shell:
+        """
+        mkdir -p data/generated && \
+        for i in $(seq 1 {params.num_numbers}); do
+            echo "$RANDOM.$RANDOM" | awk '{{print $1/32767/32767}}'
+        done > {output}
+        """
+
+# Stage 2: Gather all generated files
+rule gather_numbers:
+    input:
+        expand("data/generated/numbers_{file_id}.txt", 
+               file_id=range(config.get("num_files", 5)))
+    output:
+        "data/numbers_gathered.txt"
+    shell:
+        """
+        cat {input} > {output}
+        """
+
+# Stage 3: Sort the combined numbers
+rule sort_local:
+    input:
+        "data/numbers_gathered.txt"
+    params:
+        output_dir="results"
+    output:
+        "results/sorted_numbers.txt"
+    shell:
+        """
+        mkdir -p {params.output_dir} && \
+        sort {input} > {output}
+        """
+
+# Stage 3 (alternative): Sort with container support
+rule sort_script:
+    input:
+        "data/numbers_gathered.txt"
+    params:
+        output_dir="results"
+    output:
+        "results/sorted_numbers_script.txt"
+    container:
+        "docker://ubuntu:latest"
+    script:
+        "scripts/sort.sh"

@@ -17,11 +17,11 @@ zllv_condor = "snakemake --workflow-profile profiles/lpc-condor --snakefile work
 # ---- upstream PSI/SLURM demo tasks (kept for reference) ----
 # Local execution (single core, no cluster)
 local = """ rm -rf results \
-&& snakemake --verbose --cores 1 --printshellcmds --snakefile workflow/Snakefile sort_script
+&& snakemake --verbose --cores 1 --printshellcmds --snakefile workflow/Snakefile_demo sort_script
 """
 
 # Local execution with XRootD
-xrootd = """ env XrdSecPROTOCOL=krb5,unix snakemake --verbose --cores 1 --printshellcmds --snakefile workflow/Snakefile sort_script \
+xrootd = """ env XrdSecPROTOCOL=krb5,unix snakemake --verbose --cores 1 --printshellcmds --snakefile workflow/Snakefile_demo sort_script \
   --default-storage-provider xrootd \
   --default-storage-prefix root://eosuser.cern.ch//eos/user/c/clange/snakemake-psi-tier3-example
 """
@@ -35,7 +35,7 @@ rm -rf results \
   -j unlimited \
   --verbose \
   --printshellcmds \
-  --snakefile workflow/Snakefile sort_script
+  --snakefile workflow/Snakefile_demo sort_script
 """
 
 # SLURM cluster execution with XRootD
@@ -47,7 +47,7 @@ rm -rf results \
   -j unlimited \
   --verbose \
   --printshellcmds \
-  --snakefile workflow/Snakefile sort_script \
+  --snakefile workflow/Snakefile_demo sort_script \
   --default-storage-provider xrootd \
   --default-storage-prefix root://eosuser.cern.ch//eos/user/c/clange/snakemake-psi-tier3-example
 """
@@ -62,7 +62,7 @@ rm -rf results \
   --verbose \
   --software-deployment-method apptainer \
   --printshellcmds \
-  --snakefile workflow/Snakefile sort_script
+  --snakefile workflow/Snakefile_demo sort_script
 """
 
 # SLURM cluster execution with Apptainer containers and XRootD
@@ -75,18 +75,18 @@ rm -rf results \
   --verbose \
   --software-deployment-method apptainer \
   --printshellcmds \
-  --snakefile workflow/Snakefile sort_script \
+  --snakefile workflow/Snakefile_demo sort_script \
   --default-storage-provider xrootd \
   --default-storage-prefix root://eosuser.cern.ch//eos/user/c/clange/snakemake-psi-tier3-example
 """
 
 # Local execution with Apptainer containers
 apptainer = """ rm -rf results \
-&& snakemake --verbose --cores 1 --software-deployment-method apptainer --printshellcmds --snakefile workflow/Snakefile sort_script
+&& snakemake --verbose --cores 1 --software-deployment-method apptainer --printshellcmds --snakefile workflow/Snakefile_demo sort_script
 """
 
 # Local execution with Apptainer containers and XRootD
-apptainer_xrootd = """ env XrdSecPROTOCOL=krb5,unix snakemake --verbose --cores 1 --software-deployment-method apptainer --printshellcmds --snakefile workflow/Snakefile sort_script \
+apptainer_xrootd = """ env XrdSecPROTOCOL=krb5,unix snakemake --verbose --cores 1 --software-deployment-method apptainer --printshellcmds --snakefile workflow/Snakefile_demo sort_script \
   --default-storage-provider xrootd \
   --default-storage-prefix root://eosuser.cern.ch//eos/user/c/clange/snakemake-psi-tier3-example
 """

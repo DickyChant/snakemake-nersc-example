@@ -1,10 +1,10 @@
 # zllv analysis orchestration (LPC branch).
-# The heavy lifting lives in the two analysis scripts in `analysis_dir`; Snakemake just wires
-# them into a DAG and tracks their outputs. All paths are absolute so the outputs resolve the
-# same whether a rule runs locally or on an HTCondor worker.
+# The analysis scripts now live in-repo under workflow/scripts/ (the Snakefile finds them via
+# workflow.basedir); Snakemake wires them into a DAG and tracks their outputs. `outdir` is
+# absolute so outputs resolve the same whether a rule runs locally or on an HTCondor worker,
+# and it must match the OUT_DIR baked into the scripts.
 
-analysis_dir: /uscms_data/d3/sitianq/zllv          # signal_efficiency.py + data_splot.py live here
-outdir:       /uscms_data/d3/sitianq/zllv/plots     # where those scripts write PNGs / ROOT files
+outdir:       /uscms_data/d3/sitianq/zllv/plots     # where the scripts write PNGs / ROOT files
 env_wrapper:  "bash env.sh"                          # cmsenv wrapper (repo-root-relative)
 
 # Private-signal processes for the efficiency cutflow (Stage A).

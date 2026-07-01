@@ -13,8 +13,12 @@
 >
 > | stage | rule | script | outputs (in `plots/`) |
 > |-------|------|--------|-----------------------|
-> | A | `signal_efficiency` | `../signal_efficiency.py` | `eff_signal.png` (selection-efficiency cutflow over the private-signal NanoAODs) |
-> | B | `data_splot` (per collection) | `../data_splot.py` | `<coll>_ditrack_fit.png`, `<coll>_splot_Zsignal.png`, `<coll>_splot_panels.png` (fit m(hh) → sWeights → background-subtracted m(ℓℓV)) |
+> | A | `signal_efficiency` | `workflow/scripts/signal_efficiency.py` | `eff_signal.png` (selection-efficiency cutflow over the private-signal NanoAODs) |
+> | B | `data_splot` (per collection) | `workflow/scripts/data_splot.py` | `<coll>_ditrack_fit.png`, `<coll>_splot_Zsignal.png`, `<coll>_splot_panels.png` (fit m(hh) → sWeights → background-subtracted m(ℓℓV)) |
+>
+> A third utility, `workflow/scripts/zllv_analysis.py`, makes quick signal-vs-data overlay
+> plots and isn't part of the DAG. The scripts still write to the absolute `outdir` in
+> `config.yaml` and can be run standalone (`python3 workflow/scripts/…`) inside `cmsenv`.
 >
 > Paths, the signal-process / data-collection lists, and the sPlot caps live in
 > [`config.yaml`](config.yaml). Set up pixi, then:

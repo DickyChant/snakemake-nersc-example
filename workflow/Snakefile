@@ -11,12 +11,13 @@
 #   snakemake --cores 4 --printshellcmds --snakefile workflow/Snakefile          # or: pixi run zllv
 #   snakemake -n --snakefile workflow/Snakefile                                  # dry-run the DAG
 
+import os
 configfile: "config.yaml"
 
-ADIR  = config["analysis_dir"]
-OUT   = config["outdir"]
-ENV   = config["env_wrapper"]
-COLLS = config["data_collections"]
+SCRIPTS = os.path.join(workflow.basedir, "scripts")   # repo-local: workflow/scripts/
+OUT     = config["outdir"]
+ENV     = config["env_wrapper"]
+COLLS   = config["data_collections"]
 
 rule all:
     input:
@@ -29,7 +30,7 @@ rule signal_efficiency:
         png  = OUT + "/eff_signal.png",
         root = OUT + "/eff_signal.root",
     shell:
-        "{ENV} python3 {ADIR}/signal_efficiency.py"
+        "{ENV} python3 {SCRIPTS}/signal_efficiency.py"
 
 # Stage B -- data sPlot, one job per candidate collection (fans out over data_collections).
 rule data_splot:
@@ -42,5 +43,5 @@ rule data_splot:
         mf = config["splot"]["max_files"],
         mc = config["splot"]["max_cands"],
     shell:
-        "{ENV} python3 {ADIR}/data_splot.py -c {wildcards.coll} "
+        "{ENV} python3 {SCRIPTS}/data_splot.py -c {wildcards.coll} "
         "--max-files {params.mf} --max-cands {params.mc}"
