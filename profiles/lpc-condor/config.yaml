@@ -1,0 +1,18 @@
+# LPC HTCondor profile (OPTIONAL -- the LPC batch system is HTCondor, not SLURM).
+#
+# Uses the generic-cluster executor to submit each rule as a condor job. Requires:
+#   pixi add snakemake-executor-plugin-cluster-generic
+# and a valid grid proxy if a rule reads/writes EOS. Bump `jobs` to widen the fan-out.
+#
+# NOTE: this is a starting point, not yet exercised end-to-end on cmslpc -- validate the
+# submit string (accounting group, +DesiredOS, transfer flags) against your quota before
+# relying on it. For routine use the local profile (../lpc) is simpler and fast enough.
+executor: cluster-generic
+jobs: 20
+latency-wait: 60
+printshellcmds: true
+rerun-incomplete: true
+cluster-generic-submit-cmd: >-
+  condor_submit_snakemake
+  --request-cpus {threads}
+  --request-memory 4000

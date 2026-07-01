@@ -1,0 +1,7 @@
+# LPC local-execution profile.
+# The zllv stages are light (RDataFrame + a small RooFit), so by default they run on the
+# interactive node's cores rather than going to batch. Use `pixi run zllv`.
+cores: 4
+latency-wait: 30
+printshellcmds: true
+rerun-incomplete: true

@@ -6,6 +6,15 @@ platforms = ["linux-64", "osx-arm64"]
 version = "0.1.0"
 
 [tasks]
+# ---- zllv analysis (LPC branch) ----
+# Local run on the LPC interactive node: efficiency cutflow + per-collection data sPlot.
+zllv = "snakemake --workflow-profile profiles/lpc --snakefile workflow/Snakefile"
+# Preview the DAG without running anything.
+zllv_dry = "snakemake -n --printshellcmds --snakefile workflow/Snakefile"
+# Fan out over HTCondor (needs snakemake-executor-plugin-cluster-generic; see profiles/lpc-condor).
+zllv_condor = "snakemake --workflow-profile profiles/lpc-condor --snakefile workflow/Snakefile"
+
+# ---- upstream PSI/SLURM demo tasks (kept for reference) ----
 # Local execution (single core, no cluster)
 local = """ rm -rf results \
 && snakemake --verbose --cores 1 --printshellcmds --snakefile workflow/Snakefile sort_script
@@ -86,5 +95,6 @@ apptainer_xrootd = """ env XrdSecPROTOCOL=krb5,unix snakemake --verbose --cores 
 [dependencies]
 snakemake = ">=9.16.3,<10"
 snakemake-executor-plugin-slurm = ">=2.3.1,<3"
+snakemake-executor-plugin-cluster-generic = ">=1.0.9,<2"   # LPC HTCondor (generic-cluster) executor
 snakemake-storage-plugin-xrootd = ">=0.1.2,<1"
 xrootd = ">=5.6.9,<6"

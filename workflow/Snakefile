@@ -1,54 +1,46 @@
+# zllv analysis workflow (LPC branch)
+#
+# Orchestrates the Z -> l l V, V -> h+ h- analysis as a two-stage DAG:
+#   Stage A  signal_efficiency : selection-efficiency cutflow over the private-signal NanoAODs
+#   Stage B  data_splot        : per-collection ditrack-mass fit -> sWeights -> fitted_mass (Z)
+#
+# Each rule wraps its command in `env.sh` so it runs inside cmsenv (PyROOT/RooFit) on whatever
+# node Snakemake places it -- the LPC interactive shell (local executor) or an HTCondor worker.
+#
+# Run (from the repo root, inside `pixi shell`):
+#   snakemake --cores 4 --printshellcmds --snakefile workflow/Snakefile          # or: pixi run zllv
+#   snakemake -n --snakefile workflow/Snakefile                                  # dry-run the DAG
+
 configfile: "config.yaml"
 
-# Stage 1: Generate random numbers in parallel
-rule generate_numbers:
-    output:
-        "data/generated/numbers_{file_id}.txt"
-    params:
-        num_numbers=config.get("numbers_per_file", 10)
-    shell:
-        """
-        mkdir -p data/generated && \
-        for i in $(seq 1 {params.num_numbers}); do
-            echo "$RANDOM.$RANDOM" | awk '{{print $1/32767/32767}}'
-        done > {output}
-        """
+ADIR  = config["analysis_dir"]
+OUT   = config["outdir"]
+ENV   = config["env_wrapper"]
+COLLS = config["data_collections"]
 
-# Stage 2: Gather all generated files
-rule gather_numbers:
+rule all:
     input:
-        expand("data/generated/numbers_{file_id}.txt", 
-               file_id=range(config.get("num_files", 5)))
-    output:
-        "data/numbers_gathered.txt"
-    shell:
-        """
-        cat {input} > {output}
-        """
+        OUT + "/eff_signal.png",
+        expand(OUT + "/{coll}_splot_Zsignal.png", coll=COLLS),
 
-# Stage 3: Sort the combined numbers
-rule sort_local:
-    input:
-        "data/numbers_gathered.txt"
-    params:
-        output_dir="results"
+# Stage A -- signal selection efficiency (one cutflow over all private-signal processes).
+rule signal_efficiency:
     output:
-        "results/sorted_numbers.txt"
+        png  = OUT + "/eff_signal.png",
+        root = OUT + "/eff_signal.root",
     shell:
-        """
-        mkdir -p {params.output_dir} && \
-        sort {input} > {output}
-        """
+        "{ENV} python3 {ADIR}/signal_efficiency.py"
 
-# Stage 3 (alternative): Sort with container support
-rule sort_script:
-    input:
-        "data/numbers_gathered.txt"
-    params:
-        output_dir="results"
+# Stage B -- data sPlot, one job per candidate collection (fans out over data_collections).
+rule data_splot:
     output:
-        "results/sorted_numbers_script.txt"
-    container:
-        "docker://ubuntu:latest"
-    script:
-        "scripts/sort.sh"
+        zsig   = OUT + "/{coll}_splot_Zsignal.png",
+        fit    = OUT + "/{coll}_ditrack_fit.png",
+        panels = OUT + "/{coll}_splot_panels.png",
+        root   = OUT + "/{coll}_splot.root",
+    params:
+        mf = config["splot"]["max_files"],
+        mc = config["splot"]["max_cands"],
+    shell:
+        "{ENV} python3 {ADIR}/data_splot.py -c {wildcards.coll} "
+        "--max-files {params.mf} --max-cands {params.mc}"

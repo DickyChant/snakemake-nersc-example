@@ -1,5 +1,39 @@
 # Snakemake with SLURM on the CMS Tier-3 at PSI
 
+> **`lpc` branch — zllv analysis on the FNAL LPC.** This branch reuses the upstream
+> pixi + Snakemake scaffolding but replaces the toy generate→gather→sort demo with the real
+> **Z → ℓℓ V, V → h⁺h⁻** analysis, and targets the LPC (HTCondor, `/eos/uscms`) instead of
+> PSI/SLURM. See **[zllv workflow](#zllv-workflow-lpc-branch)** below. The original PSI demo
+> stages and tasks are preserved for reference.
+>
+> ## zllv workflow (LPC branch)
+>
+> Two stages, wired in [`workflow/Snakefile`](workflow/Snakefile), each wrapped in
+> [`env.sh`](env.sh) so it runs inside CMSSW `cmsenv` (PyROOT/RooFit) on any node:
+>
+> | stage | rule | script | outputs (in `plots/`) |
+> |-------|------|--------|-----------------------|
+> | A | `signal_efficiency` | `../signal_efficiency.py` | `eff_signal.png` (selection-efficiency cutflow over the private-signal NanoAODs) |
+> | B | `data_splot` (per collection) | `../data_splot.py` | `<coll>_ditrack_fit.png`, `<coll>_splot_Zsignal.png`, `<coll>_splot_panels.png` (fit m(hh) → sWeights → background-subtracted m(ℓℓV)) |
+>
+> Paths, the signal-process / data-collection lists, and the sPlot caps live in
+> [`config.yaml`](config.yaml). Set up pixi, then:
+>
+> ```shell
+> source /cvmfs/cms-griddata.cern.ch/cat/sw/pixi/latest/setup.sh
+> pixi install
+> pixi run zllv_dry     # preview the DAG
+> pixi run zllv         # run locally on the interactive node (profiles/lpc)
+> pixi run zllv_condor  # optional: fan out over HTCondor (profiles/lpc-condor)
+> ```
+>
+> The local profile is the tested path; the HTCondor profile in `profiles/lpc-condor/` is a
+> documented starting point (validate the condor submit string against your quota first).
+>
+> ---
+>
+> ## Upstream PSI/SLURM demo
+
 This repository demonstrates a Snakemake workflow with three stages:
 1. **Generate** - Create random numbers in parallel jobs
 2. **Gather** - Combine all generated files

@@ -1,5 +1,21 @@
-# Workflow parameters
-# Adjust these values to control the number generation and workflow behavior
+# zllv analysis orchestration (LPC branch).
+# The heavy lifting lives in the two analysis scripts in `analysis_dir`; Snakemake just wires
+# them into a DAG and tracks their outputs. All paths are absolute so the outputs resolve the
+# same whether a rule runs locally or on an HTCondor worker.
 
-num_files: 5            # Number of parallel jobs to generate random numbers
-numbers_per_file: 10    # How many random numbers each job generates
+analysis_dir: /uscms_data/d3/sitianq/zllv          # signal_efficiency.py + data_splot.py live here
+outdir:       /uscms_data/d3/sitianq/zllv/plots     # where those scripts write PNGs / ROOT files
+env_wrapper:  "bash env.sh"                          # cmsenv wrapper (repo-root-relative)
+
+# Private-signal processes for the efficiency cutflow (Stage A).
+signal_procs: [ZToPhimumu, ZToRhomumu, ZToPhiee, ZToRhoee]
+
+# Data collections for the sPlot (Stage B). The phi channels are validated; add the rho
+# channels here once their broad-ditrack fit model is tuned in data_splot.py.
+data_collections: [ZToMuMuPhi, ZToEEPhi]
+
+# sPlot controls (per collection). Keep max_files small on the LPC interactive node (each
+# file holds ~110k candidates and the node has little RAM); raise both when running on batch.
+splot:
+  max_files: 6
+  max_cands: 200000
