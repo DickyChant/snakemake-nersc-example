@@ -1,0 +1,23 @@
+# HTCondor submit for the zllv per-file skim (LPC). One job per file in filelist.txt.
+# Build the file list first (writes filelist.txt + prints the job count):
+#     bash make_filelist.sh Muon0
+# then edit `queue` below to that count (or use `-queue`), ensure a valid proxy, and:
+#     condor_submit submit.jdl
+# Collect: the skim_NNN.npz land back here; merge with  python3 merge.py . cache.npz
+universe                = vanilla
+executable              = run_skim.sh
+arguments               = $(Process) ZToMuMuPhi
+transfer_input_files    = skim.py, filelist.txt
+should_transfer_files   = YES
+when_to_transfer_output = ON_EXIT
+transfer_output_files   = skim_$INT(Process,%03d).npz
+output                  = logs/$(Process).out
+error                   = logs/$(Process).err
+log                     = logs/skim.log
+x509userproxy           = $ENV(X509_USER_PROXY)
++DesiredOS              = "el9"
+requirements            = (OpSysMajorVer == 9)
+request_cpus            = 1
+request_memory          = 2500
+request_disk            = 2000000
+queue 105
