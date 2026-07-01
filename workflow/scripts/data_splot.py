@@ -36,32 +36,32 @@ CFG = {
 }
 Z_LO, Z_HI, Z_NB = 40.0, 140.0, 50   # fitted_mass (llV) histogram
 
-def load(coll, pd, mlo, mhi, max_files, max_cands, mll_lo, mll_hi):
+def load(coll, pd, mlo, mhi, max_files, max_cands, mll_lo, mll_hi, pt_min, svprob_min):
     """Read files one at a time (this node has little RAM), flattening each to plain
     float64 immediately so the heavy per-event RVec objects are released, and stop once
     max_cands candidates are collected. Candidates are kept only if m_ditrack in [mlo,mhi],
-    fitted_mass in [Z_LO,Z_HI], and m(ll) in [mll_lo,mll_hi] -- the dilepton-mass window is
-    a preselection that suppresses Drell-Yan Z->ll (which sits at the Z pole) while keeping
-    genuine Z->llV (m(ll) below the pole). m(ll) is uncorrelated with m_ditrack, so cutting
-    on it does not bias the ditrack fit / sPlot."""
+    fitted_mass in [Z_LO,Z_HI], m(ll) in [mll_lo,mll_hi], ditrack_pt > pt_min, and
+    svprob > svprob_min. The preselection suppresses fakes -- Drell-Yan Z->ll at the Z pole
+    (m(ll)), soft QCD/UE V (ditrack_pt), and bad-vertex combinatorics (svprob) -- while
+    keeping genuine Z->llV. All three are ~uncorrelated with the projection variable m(llV),
+    so the ditrack fit / sPlot stays valid; the phi shape is re-fit within the cut sample."""
     fs = sorted(glob.glob(f"{EOS_BASE}/{pd}/crab_*/*/0000/zllv_nano_*.root"))
     total = len(fs)
     cap_files = max_files if max_files else total
+    br = [f"{coll}_m_ditrack", f"{coll}_fitted_mass", f"{coll}_mll_fullfit",
+          f"{coll}_ditrack_pt", f"{coll}_svprob"]
     m_parts, mz_parts, n, used = [], [], 0, 0
     for f in fs[:cap_files]:
         d = ROOT.RDataFrame("Events", f).Filter(f"n{coll}>0")
-        cols = d.AsNumpy([f"{coll}_m_ditrack", f"{coll}_fitted_mass", f"{coll}_mll_fullfit"])
+        cols = d.AsNumpy(br)
         used += 1
-        mcol, zcol, lcol = (cols[f"{coll}_m_ditrack"], cols[f"{coll}_fitted_mass"],
-                            cols[f"{coll}_mll_fullfit"])
-        if len(mcol) == 0:
+        if len(cols[br[0]]) == 0:
             continue
-        m  = np.concatenate([np.asarray(v, dtype="float64") for v in mcol])
-        mz = np.concatenate([np.asarray(v, dtype="float64") for v in zcol])
-        ml = np.concatenate([np.asarray(v, dtype="float64") for v in lcol])
-        del cols, mcol, zcol, lcol
+        flat = [np.concatenate([np.asarray(v, dtype="float64") for v in cols[b]]) for b in br]
+        m, mz, ml, pt, sv = flat
+        del cols, flat
         sel = ((m > mlo) & (m < mhi) & (mz > Z_LO) & (mz < Z_HI)
-               & (ml > mll_lo) & (ml < mll_hi))
+               & (ml > mll_lo) & (ml < mll_hi) & (pt > pt_min) & (sv > svprob_min))
         m_parts.append(m[sel]); mz_parts.append(mz[sel]); n += int(sel.sum())
         if max_cands and n >= max_cands:
             break
@@ -151,19 +151,25 @@ def main():
     ap.add_argument("--max-cands", type=int, default=300000, help="cap candidates for the fit (0=all)")
     ap.add_argument("--mll-min", type=float, default=0.0,   help="dilepton-mass lower cut [GeV]")
     ap.add_argument("--mll-max", type=float, default=999.0, help="dilepton-mass upper cut [GeV]")
+    ap.add_argument("--pt-min", type=float, default=0.0,     help="ditrack (V) pT lower cut [GeV]")
+    ap.add_argument("--svprob-min", type=float, default=0.0, help="SV fit-probability lower cut")
     args = ap.parse_args()
     import os; os.makedirs(OUT_DIR, exist_ok=True)
     cfg = CFG[args.collection]
 
-    # tag outputs so a dilepton-cut run does not overwrite the inclusive one
-    cut = args.mll_min > 0.0 or args.mll_max < 200.0
-    label = args.collection + (f"_mll{int(args.mll_min)}-{int(args.mll_max)}" if cut else "")
+    # tag outputs so a cut run does not overwrite others
+    parts = []
+    if args.mll_min > 0.0 or args.mll_max < 200.0: parts.append(f"mll{int(args.mll_min)}-{int(args.mll_max)}")
+    if args.pt_min > 0.0:     parts.append(f"pt{args.pt_min:g}")
+    if args.svprob_min > 0.0: parts.append(f"sv{args.svprob_min:g}")
+    label = args.collection + ("_" + "_".join(parts) if parts else "")
 
     m, mz, used, total = load(args.collection, cfg["pd"], cfg["mlo"], cfg["mhi"],
-                              args.max_files, args.max_cands, args.mll_min, args.mll_max)
+                              args.max_files, args.max_cands, args.mll_min, args.mll_max,
+                              args.pt_min, args.svprob_min)
     print(f"[{label}] data files {used}/{total}"
           + ("  (TRUNCATED)" if total > used else "")
-          + (f" ; m(ll) in [{args.mll_min:.0f},{args.mll_max:.0f}]" if cut else "")
+          + f" ; cuts: m(ll)<{args.mll_max:.0f} pt(V)>{args.pt_min:g} svprob>{args.svprob_min:g}"
           + f" ; candidates used = {m.size}")
     if m.size < 100:
         print("too few candidates; aborting"); return
