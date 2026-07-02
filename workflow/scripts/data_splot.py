@@ -31,8 +31,8 @@ OUT_DIR  = "/uscms_data/d3/sitianq/zllv/plots"
 CFG = {
     "ZToMuMuPhi": dict(pd="Muon0",   V="phi", mlo=1.00, mhi=1.05, m0=1.019461, gamma=0.004249),
     "ZToEEPhi":   dict(pd="EGamma0", V="phi", mlo=1.00, mhi=1.05, m0=1.019461, gamma=0.004249),
-    "ZToMuMuRho": dict(pd="Muon0",   V="rho", mlo=0.50, mhi=1.05, m0=0.77526,  gamma=0.1474),
-    "ZToEERho":   dict(pd="EGamma0", V="rho", mlo=0.50, mhi=1.05, m0=0.77526,  gamma=0.1474),
+    "ZToMuMuRho": dict(pd="Muon0",   V="rho", mlo=0.50, mhi=1.00, m0=0.77526,  gamma=0.1474),
+    "ZToEERho":   dict(pd="EGamma0", V="rho", mlo=0.50, mhi=1.00, m0=0.77526,  gamma=0.1474),
 }
 Z_LO, Z_HI, Z_NB = 40.0, 140.0, 50   # fitted_mass (llV) histogram
 
