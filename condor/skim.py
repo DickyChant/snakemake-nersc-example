@@ -22,6 +22,8 @@ COLS = ["m_ditrack", "fitted_mass", "mll_fullfit", "ditrack_pt", "dilep_pt", "fi
 
 def main():
     inp, coll, out = sys.argv[1], sys.argv[2], sys.argv[3]
+    pt_min  = float(sys.argv[4]) if len(sys.argv) > 4 else 0.0     # ditrack (V) pT lower cut
+    mll_max = float(sys.argv[5]) if len(sys.argv) > 5 else 1e9     # dilepton-mass upper cut
     br = [f"{coll}_{c}" for c in COLS]
     d = ROOT.RDataFrame("Events", inp).Filter(f"n{coll}>0")
     cols = d.AsNumpy(br)
@@ -32,9 +34,10 @@ def main():
                 else np.zeros(0, "f4"))
     arrs = {c: flat(f"{coll}_{c}") for c in COLS}
     m, z = arrs["m_ditrack"], arrs["fitted_mass"]
-    sel = (m > 1.00) & (m < 1.05) & (z > 70) & (z < 110)   # loose phi window + fitted-mass range
+    sel = ((m > 1.00) & (m < 1.05) & (z > 70) & (z < 110)          # loose phi window + fitted-mass range
+           & (arrs["ditrack_pt"] > pt_min) & (arrs["mll_fullfit"] < mll_max))
     np.savez_compressed(out, **{c: arrs[c][sel] for c in COLS})
-    print(f"wrote {out}  ncand={int(sel.sum())}")
+    print(f"wrote {out}  ncand={int(sel.sum())}  (pt>{pt_min:g}, mll<{mll_max:g})")
 
 if __name__ == "__main__":
     main()
